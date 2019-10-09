@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<scenarios>
+    <scenario name="ERDOSBenchmarks_1" type="ERDOSBenchmarkOne" town="Town01">
+        <ego_vehicle x="387.73" y="327.07" z="0.5" yaw="180" model="vehicle.tesla.model3" />
+        <weather cloudyness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth="0" sun_altitude="75" />
+    </scenario>
+
+    <scenario name="ERDOSBenchmarks_2" type="ERDOSBenchmarkTwo" town="Town01">
+        <ego_vehicle x="387.73" y="327.07" z="0.5" yaw="180" model="vehicle.tesla.model3" />
+        <weather cloudyness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth="0" sun_altitude="75" />
+    </scenario>
+</scenarios>
