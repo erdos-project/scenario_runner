@@ -305,7 +305,7 @@ class ERDOSBenchmarkTwo(BasicScenario):
                  randomize=False,
                  debug_mode=False,
                  criteria_enable=True,
-                 timeout=600):
+                 timeout=600000000000):
         """
         Sets up the required class variables and calls BasicScenario to
         finish setting up the scenario.
@@ -317,7 +317,7 @@ class ERDOSBenchmarkTwo(BasicScenario):
         self.timeout = timeout
 
         # Number of pedestrians in the scene.
-        self._num_walkers = 20
+        self._num_walkers = 91 
 
         # Pedestrian Config.
         self._pedestrian_distance = 132
@@ -346,18 +346,22 @@ class ERDOSBenchmarkTwo(BasicScenario):
 
         Returns the actors spawned.
         """
-        walker_controller_bp = self._world.get_blueprint_library().find(
-            'controller.ai.walker')
         actors = []
         for location, destination in zip(sampled_locations, goto_locations):
             # Spawn the actor.
             walker_bp = random.choice(
                 self._world.get_blueprint_library().filter("walker.*"))
-            walker_actor = self._world.spawn_actor(walker_bp,
-                    carla.Transform(location=location))
+            try:
+                walker_actor = self._world.spawn_actor(
+                    walker_bp, carla.Transform(location=location))
+            except RuntimeError:
+                print("Could not spawn the actor because of collision.")
+                continue
             actors.append(walker_actor)
 
             # Spawn the controller.
+            walker_controller_bp = self._world.get_blueprint_library().find(
+                'controller.ai.walker')
             walker_controller_actor = self._world.spawn_actor(
                 walker_controller_bp, carla.Transform(), walker_actor)
 
@@ -369,7 +373,6 @@ class ERDOSBenchmarkTwo(BasicScenario):
             walker_controller_actor.set_max_speed(1.4)
 
         return actors
-
 
     def _initialize_actors(self, config):
         """
@@ -386,15 +389,15 @@ class ERDOSBenchmarkTwo(BasicScenario):
                     len(LEFT_PEDESTRIAN_LOCATIONS) +
                     len(RIGHT_PEDESTRIAN_LOCATIONS)))
 
-
         left_locations, right_locations = [], []
         # To ensure that there is determinism across runs, and still be able
         # to use random.sample
         random.seed(0)
         if self._num_walkers // 2 >= len(RIGHT_PEDESTRIAN_LOCATIONS):
             right_locations = RIGHT_PEDESTRIAN_LOCATIONS
-            left_locations = random.sample(LEFT_PEDESTRIAN_LOCATIONS,
-                    self._num_walkers - len(RIGHT_PEDESTRIAN_LOCATIONS))
+            left_locations = random.sample(
+                LEFT_PEDESTRIAN_LOCATIONS,
+                self._num_walkers - len(RIGHT_PEDESTRIAN_LOCATIONS))
         else:
             right_locations = random.sample(RIGHT_PEDESTRIAN_LOCATIONS,
                                             self._num_walkers // 2)
@@ -403,25 +406,15 @@ class ERDOSBenchmarkTwo(BasicScenario):
                 self._num_walkers - (self._num_walkers // 2))
 
         # Spawn the pedestrians on the left and right hand sides of the road.
-        self.other_actors.extend(self.spawn_pedestrians(right_locations,
-            random.sample(RIGHT_PEDESTRIAN_LOCATIONS, len(right_locations))))
-        self.other_actors.extend(self.spawn_pedestrians(left_locations,
-            random.sample(LEFT_PEDESTRIAN_LOCATIONS, len(left_locations))))
-
-        pedestrian_wp, _ = ERDOSBenchmarkOne.get_waypoint_in_distance(
-            self._reference_waypoint, self._pedestrian_distance)
-        self._pedestrian_transform = carla.Transform(
-            carla.Location(
-                pedestrian_wp.transform.location.x,
-                pedestrian_wp.transform.location.y +
-                self._pedestrian_translation,
-                pedestrian_wp.transform.location.z + 15),
-            carla.Rotation(pedestrian_wp.transform.rotation.pitch,
-                           pedestrian_wp.transform.rotation.yaw + 90,
-                           pedestrian_wp.transform.rotation.roll))
-        pedestrian = CarlaActorPool.request_new_actor(
-            'walker.pedestrian.0009', self._pedestrian_transform)
-        self.other_actors.append(pedestrian)
+        self.other_actors.extend(
+            self.spawn_pedestrians(
+                right_locations,
+                random.sample(RIGHT_PEDESTRIAN_LOCATIONS,
+                              len(right_locations))))
+        self.other_actors.extend(
+            self.spawn_pedestrians(
+                left_locations,
+                random.sample(LEFT_PEDESTRIAN_LOCATIONS, len(left_locations))))
 
         # Set all the traffic lights in the world to green.
         for actor in self._world.get_actors():
@@ -435,16 +428,6 @@ class ERDOSBenchmarkTwo(BasicScenario):
         pedestrian run from in between the vehicles in front of the ego
         vehicle.
         """
-
-        # The pedestrian needs to walk to the other side of the road.
-        pedestrian_crossing = py_trees.composites.Parallel(
-            "Obstacle clearing road",
-            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
-        pedestrian_crossing.add_child(
-            DriveDistance(self.other_actors[-1], self._crossing_distance))
-        pedestrian_crossing.add_child(
-            KeepVelocity(self.other_actors[-1], self._pedestrian_velocity))
-
         # Define the endcondition.
         endcondition = py_trees.composites.Parallel(
             "Waiting for end position",
@@ -454,11 +437,6 @@ class ERDOSBenchmarkTwo(BasicScenario):
 
         # Define the behavior tree.
         sequence = py_trees.composites.Sequence("BenchmarkOne Behavior Tree")
-        sequence.add_child(
-            InTriggerDistanceToVehicle(self.other_actors[-1],
-                                       self.ego_vehicles[0],
-                                       self._pedestrian_trigger_distance))
-        sequence.add_child(pedestrian_crossing)
         sequence.add_child(
             InTriggerDistanceToLocation(
                 self.ego_vehicles[0],
