@@ -12,6 +12,7 @@ from srunner.tools.scenario_helper import *
 ERDOS_BENCHMARK_SCENARIOS = [
     "ERDOSBenchmarkOne",
     "ERDOSBenchmarkTwo",
+    "ERDOSBenchmarkThree",
 ]
 
 LEFT_PEDESTRIAN_LOCATIONS = [
@@ -128,7 +129,7 @@ class ERDOSBenchmarkOne(BasicScenario):
                  randomize=False,
                  debug_mode=False,
                  criteria_enable=True,
-                 timeout=600):
+                 timeout=600000000000):
         """
         Sets up the required class variables and calls BasicScenario to
         finish setting up the scenario.
@@ -215,7 +216,7 @@ class ERDOSBenchmarkOne(BasicScenario):
                            pedestrian_wp.transform.rotation.yaw + 90,
                            pedestrian_wp.transform.rotation.roll))
         pedestrian = CarlaActorPool.request_new_actor(
-            'walker.pedestrian.0009',
+            'walker.pedestrian.0007',
             self._pedestrian_transform,
             rolename='pedestrian')
         self.other_actors.append(pedestrian)
@@ -242,9 +243,9 @@ class ERDOSBenchmarkOne(BasicScenario):
             "Obstacle clearing road",
             policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
         pedestrian_crossing.add_child(
-            DriveDistance(self.other_actors[1], self._crossing_distance))
+            DriveDistance(self.other_actors[-1], self._crossing_distance))
         pedestrian_crossing.add_child(
-            KeepVelocity(self.other_actors[1], self._pedestrian_velocity))
+            KeepVelocity(self.other_actors[-1], self._pedestrian_velocity))
 
         # Define the endcondition.
         endcondition = py_trees.composites.Parallel(
@@ -257,7 +258,7 @@ class ERDOSBenchmarkOne(BasicScenario):
         sequence = py_trees.composites.Sequence("BenchmarkOne Behavior Tree")
         sequence.add_child(coca_cola_transform)
         sequence.add_child(
-            InTriggerDistanceToVehicle(self.other_actors[1],
+            InTriggerDistanceToVehicle(self.other_actors[-1],
                                        self.ego_vehicles[0],
                                        self._pedestrian_trigger_distance))
         sequence.add_child(pedestrian_crossing)
@@ -265,10 +266,10 @@ class ERDOSBenchmarkOne(BasicScenario):
             InTriggerDistanceToLocation(
                 self.ego_vehicles[0],
                 self._reference_waypoint.transform.location -
-                carla.Location(x=self._driving_distance), 10))
+                carla.Location(x=self._driving_distance), 100))
         sequence.add_child(endcondition)
         sequence.add_child(ActorDestroy(self.other_actors[0]))
-        sequence.add_child(ActorDestroy(self.other_actors[1]))
+        sequence.add_child(ActorDestroy(self.other_actors[-1]))
 
         return sequence
 
@@ -317,7 +318,7 @@ class ERDOSBenchmarkTwo(BasicScenario):
         self.timeout = timeout
 
         # Number of pedestrians in the scene.
-        self._num_walkers = 91 
+        self._num_walkers = 91
 
         # Pedestrian Config.
         self._pedestrian_distance = 132
@@ -445,6 +446,148 @@ class ERDOSBenchmarkTwo(BasicScenario):
         sequence.add_child(endcondition)
         for actor in self.other_actors:
             sequence.add_child(ActorDestroy(actor))
+
+        return sequence
+
+    def _create_test_criteria(self):
+        """
+        A list of all test criteria will be created that is later used
+        in parallel behavior tree.
+        """
+        criteria = []
+        collision_criterion = CollisionTest(self.ego_vehicles[0])
+        criteria.append(collision_criterion)
+        return criteria
+
+    def __del__(self):
+        """
+        Remove all actors upon deletion
+        """
+        self.remove_all_actors()
+
+
+class ERDOSBenchmarkThree(BasicScenario):
+    """
+    This class sets up the scenario where the ego vehicle needs to drive
+    on a road, and a pedestrian crosses unexpectedly from the other side of
+    the road.
+
+    This is a single ego vehicle scenario
+    """
+
+    def __init__(self,
+                 world,
+                 ego_vehicles,
+                 config,
+                 randomize=False,
+                 debug_mode=False,
+                 criteria_enable=True,
+                 timeout=600000000000):
+        """
+        Sets up the required class variables and calls BasicScenario to
+        finish setting up the scenario.
+        """
+        self._map = CarlaDataProvider.get_map()
+        self._world = CarlaDataProvider.get_world()
+        self._reference_waypoint = self._map.get_waypoint(
+            config.trigger_points[0].location)
+        self.timeout = timeout
+
+        # Other vehicle config.
+        self._vehicle_distance = 323
+        self._crossing_distance = 40
+        self._vehicle_velocity = 10
+        self._vehicle_translation = 50
+        self._vehicle_trigger_distance = 150
+
+        # Ego vehicle config
+        self._driving_distance = 370
+
+        # Call the base class to set up the scenario.
+        super(ERDOSBenchmarkThree,
+              self).__init__("ERDOSBenchmarkThree",
+                             ego_vehicles,
+                             config,
+                             world,
+                             debug_mode,
+                             criteria_enable=criteria_enable)
+
+    @staticmethod
+    def get_waypoint_in_distance(waypoint, distance):
+        """
+        Obtain a waypoint in a given distance from the actor's location.
+        Do not stop the search on the first intersection.
+        """
+        traveled_distance = 0
+        while traveled_distance < distance:
+            waypoint_new = waypoint.next(1.0)[0]
+            traveled_distance += waypoint_new.transform.location.distance(
+                waypoint.transform.location)
+            waypoint = waypoint_new
+
+        return waypoint, traveled_distance
+
+    def _initialize_actors(self, config):
+        """
+        Initializes the other vehicles in the scenario.
+        """
+        # Initialize the other vehicle.
+        vehicle_wp, _ = ERDOSBenchmarkThree.get_waypoint_in_distance(
+            self._reference_waypoint, self._vehicle_distance)
+        self._vehicle_transform = carla.Transform(
+            carla.Location(
+                vehicle_wp.transform.location.x,
+                vehicle_wp.transform.location.y - self._vehicle_translation,
+                vehicle_wp.transform.location.z + 10),
+            carla.Rotation(vehicle_wp.transform.rotation.pitch, 90,
+                           vehicle_wp.transform.rotation.roll))
+        vehicle = CarlaActorPool.request_new_actor('vehicle.audi.a2',
+                                                   self._vehicle_transform,
+                                                   rolename='vehicle')
+        self.other_actors.append(vehicle)
+
+        # Set all the traffic lights in the world to green.
+        for actor in self._world.get_actors():
+            if actor.type_id == "traffic.traffic_light":
+                actor.set_state(carla.TrafficLightState.Green)
+                actor.freeze(True)
+
+    def _create_behavior(self):
+        """
+        The scenario involves setting up a set of vehicles, and having a
+        pedestrian run from in between the vehicles in front of the ego
+        vehicle.
+        """
+        # The vehicle needs to drive to the other side.
+        vehicle_crossing = py_trees.composites.Parallel(
+            "Obstacle clearing road",
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ONE)
+        vehicle_crossing.add_child(
+            DriveDistance(self.other_actors[-1], self._crossing_distance))
+        vehicle_crossing.add_child(
+            KeepVelocity(self.other_actors[-1], self._vehicle_velocity))
+
+        # Define the endcondition.
+        endcondition = py_trees.composites.Parallel(
+            "Waiting for end position",
+            policy=py_trees.common.ParallelPolicy.SUCCESS_ON_ALL)
+        endcondition.add_child(
+            StandStill(self.ego_vehicles[0], name="StandStill"))
+
+        # Define the behavior tree.
+        sequence = py_trees.composites.Sequence("BenchmarkOne Behavior Tree")
+        sequence.add_child(
+            InTriggerDistanceToVehicle(self.other_actors[-1],
+                                       self.ego_vehicles[0],
+                                       self._vehicle_trigger_distance))
+        sequence.add_child(vehicle_crossing)
+        sequence.add_child(
+            InTriggerDistanceToLocation(
+                self.ego_vehicles[0],
+                self._reference_waypoint.transform.location +
+                carla.Location(x=self._driving_distance), 100))
+        sequence.add_child(endcondition)
+        sequence.add_child(ActorDestroy(self.other_actors[-1]))
 
         return sequence
 
