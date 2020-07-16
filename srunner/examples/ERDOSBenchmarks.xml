@@ -1,22 +1,52 @@
 <?xml version="1.0"?>
 <scenarios>
     <scenario name="ERDOSPedestrianBehindCar" type="ERDOSPedestrianBehindCar" town="Town01">
-        <ego_vehicle x="387.73" y="327.07" z="0.5" yaw="180" model="vehicle.tesla.model3" />
+        <ego_vehicle x="267.73" y="326.37" z="0.5" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <weather cloudyness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth="0" sun_altitude="75" />
+    </scenario>
+
+    <scenario name="ERDOSCarBehindTruck" type="ERDOSCarBehindTruck" town="Town01">
+        <ego_vehicle x="237.73" y="326.37" z="0.5" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <weather cloudyness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth="0" sun_altitude="75" />
+    </scenario>
+
+    <scenario name="ERDOSPedestrianBehindParkedCar" type="ERDOSPedestrianBehindParkedCar" town="Town01">
+        <ego_vehicle x="237.73" y="326.37" z="0.5" yaw="180" model="vehicle.lincoln.mkz2017" />
         <weather cloudyness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth="0" sun_altitude="75" />
     </scenario>
 
     <scenario name="ERDOSManyPedestrians" type="ERDOSManyPedestrians" town="Town01">
-        <ego_vehicle x="387.73" y="327.07" z="0.5" yaw="180" model="vehicle.tesla.model3" />
+        <ego_vehicle x="387.73" y="326.37" z="0.5" yaw="180" model="vehicle.lincoln.mkz2017" />
         <weather cloudyness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth="0" sun_altitude="75" />
     </scenario>
 
-    <scenario name="ERDOSBenchmarks_3" type="ERDOSBenchmarkThree" town="Town01">
-        <ego_vehicle x="11.91" y="330.75" z="0.5" model="vehicle.tesla.model3" />
+    <scenario name="ERDOSCarRunningLight" type="ERDOSCarRunningLight" town="Town01">
+        <ego_vehicle x="11.91" y="330.75" z="0.5" model="vehicle.lincoln.mkz2017" />
         <weather cloudyness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth="0" sun_altitude="75" />
     </scenario>
 
     <scenario name="ERDOSCarFromAlley" type="ERDOSCarFromAlley" town="Town01">
-        <ego_vehicle x="88.7" y="7.8" z="0.5" yaw="90" model="vehicle.tesla.model3" />
+        <ego_vehicle x="88.7" y="57.8" z="0.5" yaw="90" model="vehicle.lincoln.mkz2017" />
+        <weather cloudyness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth="0" sun_altitude="75" />
+    </scenario>
+
+    <scenario name="ERDOSTrackPedestrians" type="ERDOSTrackPedestrians" town="Town01">
+	<ego_vehicle x="357.73" y="326.37" z="0.5" yaw="180" model="vehicle.tesla.model3" />
+	<weather cloudyness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth="0" sun_altitude="75" />
+    </scenario>
+
+    <scenario name="ERDOSPedestrianCrossing" type="ERDOSPedestrianCrossing" town="Town01">
+        <ego_vehicle x="287.73" y="326.37" z="0.5" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <weather cloudyness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth="0" sun_altitude="75" />
+    </scenario>
+
+    <scenario name="ERDOSPedestrianCrossingPaths" type="ERDOSPedestrianCrossingPaths" town="Town01">
+        <ego_vehicle x="287.73" y="326.37" z="0.5" yaw="180" model="vehicle.lincoln.mkz2017" />
+        <weather cloudyness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth="0" sun_altitude="75" />
+    </scenario>
+
+    <scenario name="ERDOSTrafficJam" type="ERDOSTrafficJam" town="Town01">
+        <ego_vehicle x="330.73" y="326.37" z="0.5" yaw="180" model="vehicle.lincoln.mkz2017" />
         <weather cloudyness="0" precipitation="0" precipitation_deposits="0" wind_intensity="0" sun_azimuth="0" sun_altitude="75" />
     </scenario>
 </scenarios>

@@ -1875,6 +1875,52 @@ class ActorDestroy(AtomicBehavior):
         return new_status
 
 
+class ActorRotationSetter(AtomicBehavior):
+    """
+    This class rotates the given actor by a specified angle around its yaw.
+    Important parameters:
+    - actor: CARLA actor to be rotated
+    - angle: The angle to rotate the actor by.
+    The behavior terminates after rotating the actor
+    """
+
+    def __init__(self, actor, rotation, name="ActorRotationSetter"):
+        """
+        Init
+        """
+        super(ActorRotationSetter, self).__init__(name, actor)
+        self._rotation = rotation
+        self.logger.debug("%s.__init__()" % (self.__class__.__name__))
+
+    def initialise(self):
+        super(ActorRotationSetter, self).initialise()
+
+
+    def update(self):
+        """
+        Transform actor
+        """
+        new_status = py_trees.common.Status.RUNNING
+
+        if not self._actor.is_alive:
+            new_status = py_trees.common.Status.FAILURE
+        else:
+            self._actor.set_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_angular_velocity(carla.Vector3D(0, 0, 0))
+            self._actor.set_transform(
+                carla.Transform(
+                    self._actor.get_location(),
+                    carla.Rotation(
+                        pitch=self._actor.get_transform().rotation.pitch,
+                        roll=self._actor.get_transform().rotation.roll,
+                        yaw=self._actor.get_transform().rotation.yaw +
+                        self._rotation)))
+
+        new_status = py_trees.common.Status.SUCCESS
+
+        return new_status
+
+
 class ActorTransformSetter(AtomicBehavior):
 
     """
